@@ -441,7 +441,7 @@ func (j *joinSender) JoinGroup(nodesJoined []string) ([]string, []string) {
 }
 
 func (j *joinSender) MakeCall(ctx json.Context, node string, res *joinResponse) <-chan error {
-	errC := make(chan error)
+	errC := make(chan error, 1)
 
 	go func() {
 		defer close(errC)
