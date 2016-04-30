@@ -24,8 +24,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/util"
 )
 
 type MemberlistTestSuite struct {

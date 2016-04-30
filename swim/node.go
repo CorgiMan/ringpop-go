@@ -25,15 +25,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uber/ringpop-go/discovery"
-	"github.com/uber/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/discovery"
+	"github.com/CorgiMan/ringpop-go/events"
 
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/benbjohnson/clock"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/util"
 )
 
 var (

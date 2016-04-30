@@ -30,16 +30,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/forward"
+	"github.com/CorgiMan/ringpop-go/hashring"
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/swim"
 	athrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/benbjohnson/clock"
 	"github.com/dgryski/go-farm"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/forward"
-	"github.com/uber/ringpop-go/hashring"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/swim"
 	"github.com/uber/tchannel-go"
 )
 

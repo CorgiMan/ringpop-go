@@ -21,11 +21,12 @@
 package forward
 
 import (
+	"testing"
+
+	"github.com/CorgiMan/ringpop-go/shared"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/shared"
 	"github.com/uber/tchannel-go"
-	"testing"
 )
 
 type requestSenderTestSuite struct {

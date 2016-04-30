@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/swim"
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/swim"
 )
 import "github.com/stretchr/testify/mock"
 

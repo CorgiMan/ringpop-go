@@ -22,11 +22,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/CorgiMan/ringpop-go/swim"
+	"github.com/CorgiMan/ringpop-go/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/swim"
-	"github.com/uber/ringpop-go/test/mocks"
 	"github.com/uber/tchannel-go"
 )
 

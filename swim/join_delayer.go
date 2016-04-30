@@ -25,9 +25,9 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/util"
 )
 
 const (

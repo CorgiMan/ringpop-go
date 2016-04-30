@@ -25,12 +25,12 @@ import (
 	"flag"
 	"log"
 
+	"github.com/CorgiMan/ringpop-go"
+	"github.com/CorgiMan/ringpop-go/discovery/jsonfile"
+	gen "github.com/CorgiMan/ringpop-go/examples/pingpong/gen-go/pingpong"
+	"github.com/CorgiMan/ringpop-go/swim"
 	"github.com/Sirupsen/logrus"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go"
-	"github.com/uber/ringpop-go/discovery/jsonfile"
-	gen "github.com/uber/ringpop-go/examples/pingpong/gen-go/pingpong"
-	"github.com/uber/ringpop-go/swim"
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/thrift"
 )

@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/events/test/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/events/test/mocks"
 	"github.com/uber/tchannel-go"
 )
 

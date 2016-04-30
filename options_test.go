@@ -24,11 +24,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/hashring"
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/test/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/hashring"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/test/mocks"
 	"github.com/uber/tchannel-go"
 )
 

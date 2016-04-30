@@ -28,9 +28,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/logging"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/logging"
 
 	"github.com/dgryski/go-farm"
 )

@@ -28,10 +28,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/test/thrift/pingpong"
 	athrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/test/thrift/pingpong"
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/json"
 	"github.com/uber/tchannel-go/thrift"

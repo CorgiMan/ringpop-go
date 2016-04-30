@@ -26,10 +26,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
+	"github.com/CorgiMan/ringpop-go/events"
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/ringpop-go/discovery/statichosts"
-	"github.com/uber/ringpop-go/events"
 )
 
 // TestPartitionHealWithFaulties creates two partitions A and B where A sees B

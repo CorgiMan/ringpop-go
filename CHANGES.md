@@ -80,7 +80,7 @@ options out of the box.
 To upgrade if you were previously using `File`:
 
 ```diff
-+       "github.com/uber/ringpop-go/discovery/jsonfile"
++       "github.com/CorgiMan/ringpop-go/discovery/jsonfile"
 ...
 -       bootstrapOpts.File = *hostfile
 +       bootstrapOpts.DiscoverProvider = jsonfile.New(*hostfile)
@@ -89,7 +89,7 @@ To upgrade if you were previously using `File`:
 For static `Hosts`:
 
 ```diff
-+       "github.com/uber/ringpop-go/discovery/statichosts"
++       "github.com/CorgiMan/ringpop-go/discovery/statichosts"
 ...
 -       bootstrapOpts.Hosts = []string{"127.0.0.1:3000", "127.0.0.1:3001"}
 +       bootstrapOpts.DiscoverProvider = statichosts.New("127.0.0.1:3000", "127.0.0.1:3001")

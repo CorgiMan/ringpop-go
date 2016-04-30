@@ -29,11 +29,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/benbjohnson/clock"
 	"github.com/dgryski/go-farm"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/util"
 )
 
 // A memberlist contains the membership for a node

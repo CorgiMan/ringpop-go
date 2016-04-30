@@ -25,10 +25,10 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go"
+	"github.com/CorgiMan/ringpop-go/discovery/jsonfile"
+	"github.com/CorgiMan/ringpop-go/swim"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go"
-	"github.com/uber/ringpop-go/discovery/jsonfile"
-	"github.com/uber/ringpop-go/swim"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/uber/tchannel-go"

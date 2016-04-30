@@ -27,14 +27,14 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/swim/test/mocks"
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/discovery/statichosts"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/swim/test/mocks"
 	"github.com/uber/tchannel-go"
 )
 

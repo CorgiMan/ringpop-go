@@ -1,6 +1,6 @@
 package forward
 
-import "github.com/uber/ringpop-go/events"
+import "github.com/CorgiMan/ringpop-go/events"
 import "github.com/stretchr/testify/mock"
 
 type EventListener struct {

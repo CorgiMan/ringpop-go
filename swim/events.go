@@ -25,7 +25,7 @@ import (
 
 	"reflect"
 
-	"github.com/uber/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/events"
 )
 
 // The ListenerFunc type is an adapter to allow the use of ordinary functions

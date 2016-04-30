@@ -25,10 +25,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/util"
 )
 
 type DisseminatorTestSuite struct {

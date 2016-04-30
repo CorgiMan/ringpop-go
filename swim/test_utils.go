@@ -27,13 +27,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/ringpop-go/discovery/statichosts"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/util"
 	"github.com/uber/tchannel-go"
 )
 

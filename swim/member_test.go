@@ -24,10 +24,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/util"
 )
 
 type MemberTestSuite struct {

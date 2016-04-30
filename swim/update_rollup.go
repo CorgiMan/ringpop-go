@@ -24,10 +24,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/benbjohnson/clock"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/util"
 )
 
 var timeZero = time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)

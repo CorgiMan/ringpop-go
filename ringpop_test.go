@@ -24,15 +24,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
+	"github.com/CorgiMan/ringpop-go/events"
+	eventsmocks "github.com/CorgiMan/ringpop-go/events/test/mocks"
+	"github.com/CorgiMan/ringpop-go/forward"
+	"github.com/CorgiMan/ringpop-go/swim"
+	"github.com/CorgiMan/ringpop-go/test/mocks"
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/discovery/statichosts"
-	"github.com/uber/ringpop-go/events"
-	eventsmocks "github.com/uber/ringpop-go/events/test/mocks"
-	"github.com/uber/ringpop-go/forward"
-	"github.com/uber/ringpop-go/swim"
-	"github.com/uber/ringpop-go/test/mocks"
 	"github.com/uber/tchannel-go"
 )
 

@@ -27,8 +27,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/CorgiMan/ringpop-go/events"
 	"github.com/dgryski/go-farm"
-	"github.com/uber/ringpop-go/events"
 
 	"github.com/stretchr/testify/assert"
 )

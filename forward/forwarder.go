@@ -25,11 +25,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/util"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/util"
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/thrift"
 )

@@ -26,11 +26,11 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/CorgiMan/ringpop-go/forward"
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/shared"
+	"github.com/CorgiMan/ringpop-go/util"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/forward"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/shared"
-	"github.com/uber/ringpop-go/util"
 	"github.com/uber/tchannel-go"
 )
 

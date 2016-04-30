@@ -24,8 +24,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/discovery/statichosts"
 )
 
 type JoinSenderTestSuite struct {

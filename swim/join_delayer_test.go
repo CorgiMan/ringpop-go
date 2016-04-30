@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/swim/test/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/swim/test/mocks"
 )
 
 // Null randomizer and sleeper used for join delay tests.

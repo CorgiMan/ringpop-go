@@ -28,8 +28,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/ringpop-go/discovery/jsonfile"
-	"github.com/uber/ringpop-go/discovery/statichosts"
+	"github.com/CorgiMan/ringpop-go/discovery/jsonfile"
+	"github.com/CorgiMan/ringpop-go/discovery/statichosts"
 
 	"github.com/stretchr/testify/suite"
 )

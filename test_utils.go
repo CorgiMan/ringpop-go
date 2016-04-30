@@ -25,10 +25,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/swim"
+	"github.com/CorgiMan/ringpop-go/util"
 	"github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/events"
-	"github.com/uber/ringpop-go/swim"
-	"github.com/uber/ringpop-go/util"
 )
 
 // fake stats

@@ -25,9 +25,9 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/logging"
+	"github.com/CorgiMan/ringpop-go/util"
 	log "github.com/uber-common/bark"
-	"github.com/uber/ringpop-go/logging"
-	"github.com/uber/ringpop-go/util"
 )
 
 // discoverProviderHealer attempts to heal a ringpop partition by consulting

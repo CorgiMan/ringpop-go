@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CorgiMan/ringpop-go/forward"
+	"github.com/CorgiMan/ringpop-go/shared"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/ringpop-go/forward"
-	"github.com/uber/ringpop-go/shared"
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/json"
 	"golang.org/x/net/context"
