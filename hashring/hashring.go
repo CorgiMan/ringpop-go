@@ -24,278 +24,143 @@ package hashring
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 	"sync"
 
-	"github.com/CorgiMan/ringpop-go/events"
-	"github.com/CorgiMan/ringpop-go/logging"
-	"github.com/uber-common/bark"
+	// "github.com/CorgiMan/ringpop-go/events"
+	// "github.com/CorgiMan/ringpop-go/logging"
 
-	"github.com/dgryski/go-farm"
+	// "github.com/uber-common/bark"
 )
 
-// Configuration is a configuration struct that can be passed to the
-// Ringpop constructor to customize hash ring options.
-type Configuration struct {
-	// ReplicaPoints is the number of positions a node will be assigned on the
-	// ring. A bigger number will provide better key distribution, but require
-	// more computation when building or traversing the ring (typically on
-	// lookups or membership changes).
-	ReplicaPoints int
+// add, remove, addremove, checksum
+
+type Server struct {
+	hostport string
 }
 
-// HashRing stores strings on a consistent hash ring. HashRing internally uses
-// a Red-Black Tree to achieve O(log N) lookup and insertion time.
 type HashRing struct {
-	sync.RWMutex
-
-	hashfunc      func(string) int
-	replicaPoints int
-
-	serverSet map[string]struct{}
-	tree      *redBlackTree
-	checksum  uint32
-
-	logger bark.Logger
-
-	listeners []events.EventListener
+	sync.Mutex
+	hashes, swap  []uint64
+	serversByHash map[uint64][]*Server
+	servers       []*Server
+	hashFunc      func(string) uint64
 }
 
-func (r *HashRing) emit(event interface{}) {
-	for _, listener := range r.listeners {
-		listener.HandleEvent(event)
-	}
+// Config for hashring package.
+var Config struct {
+	ReplicaPoints uint8 `default:"3"`
 }
 
-// RegisterListener adds a listener that will listen for hashring events.
-func (r *HashRing) RegisterListener(l events.EventListener) {
-	r.listeners = append(r.listeners, l)
+func init() {
+	// cfg.Fill(&Config)
+	Config.ReplicaPoints = 100
 }
 
-// New instantiates and returns a new HashRing.
-func New(hashfunc func([]byte) uint32, replicaPoints int) *HashRing {
-	r := &HashRing{
-		replicaPoints: replicaPoints,
-		hashfunc: func(str string) int {
-			return int(hashfunc([]byte(str)))
-		},
-		logger: logging.Logger("ring"),
-	}
-
-	r.serverSet = make(map[string]struct{})
-	r.tree = &redBlackTree{}
+func New(hashFunc func([]byte) uint64) *HashRing {
+	r := &HashRing{}
+	r.hashFunc = func(s string) uint64 { return hashFunc([]byte(s)) }
+	r.serversByHash = make(map[uint64][]*Server)
 	return r
 }
 
-// Checksum returns the checksum of all stored servers in the HashRing
-// Use this value to find out if the HashRing is mutated.
-func (r *HashRing) Checksum() uint32 {
-	r.RLock()
-	checksum := r.checksum
-	r.RUnlock()
-	return checksum
-}
-
-// computeChecksum computes checksum of all servers in the ring.
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) computeChecksumNoLock() {
-	addresses := r.copyServersNoLock()
-	sort.Strings(addresses)
-	bytes := []byte(strings.Join(addresses, ";"))
-	old := r.checksum
-	r.checksum = farm.Fingerprint32(bytes)
-
-	if r.checksum != old {
-		r.logger.WithFields(bark.Fields{
-			"checksum":    r.checksum,
-			"oldChecksum": old,
-		}).Debug("ringpop ring computed new checksum")
+func (r *HashRing) Lookup(key string) *Server {
+	ss := r.LookupNUnique(key, 1)
+	if len(ss) == 0 {
+		return nil
 	}
-
-	r.emit(events.RingChecksumEvent{
-		OldChecksum: old,
-		NewChecksum: r.checksum,
-	})
+	return ss[0]
 }
 
-// AddServer adds a server and its replicas onto the HashRing.
-func (r *HashRing) AddServer(address string) bool {
+func (r *HashRing) LookupNUnique(key string, n int) []*Server {
+	// don't defer Unlock for performance
 	r.Lock()
-	ok := r.addServerNoLock(address)
-	if ok {
-		r.computeChecksumNoLock()
-		r.emit(events.RingChangedEvent{
-			ServersAdded:   []string{address},
-			ServersRemoved: nil,
-		})
-	}
-	r.Unlock()
-	return ok
-}
 
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) addServerNoLock(address string) bool {
-	if _, ok := r.serverSet[address]; ok {
-		return false
-	}
+	S := make(map[*Server]struct{})
 
-	r.addReplicasNoLock(address)
-	return true
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) addReplicasNoLock(server string) {
-	r.serverSet[server] = struct{}{}
-	for i := 0; i < r.replicaPoints; i++ {
-		address := fmt.Sprintf("%s%v", server, i)
-		r.tree.Insert(r.hashfunc(address), server)
-	}
-}
-
-// RemoveServer removes a server and its replicas from the HashRing.
-func (r *HashRing) RemoveServer(address string) bool {
-	r.Lock()
-	ok := r.removeServerNoLock(address)
-	if ok {
-		r.computeChecksumNoLock()
-		r.emit(events.RingChangedEvent{
-			ServersAdded:   nil,
-			ServersRemoved: []string{address},
-		})
-	}
-	r.Unlock()
-	return ok
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) removeServerNoLock(address string) bool {
-	if _, ok := r.serverSet[address]; !ok {
-		return false
-	}
-
-	r.removeReplicasNoLock(address)
-	return true
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) removeReplicasNoLock(server string) {
-	delete(r.serverSet, server)
-	for i := 0; i < r.replicaPoints; i++ {
-		address := fmt.Sprintf("%s%v", server, i)
-		r.tree.Delete(r.hashfunc(address))
-	}
-}
-
-// AddRemoveServers adds and removes servers and all replicas associated to those
-// servers to and from the HashRing. Returns whether the HashRing has changed.
-func (r *HashRing) AddRemoveServers(add []string, remove []string) bool {
-	r.Lock()
-	result := r.addRemoveServersNoLock(add, remove)
-	r.Unlock()
-	return result
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) addRemoveServersNoLock(add []string, remove []string) bool {
-	changed := false
-
-	for _, server := range add {
-		if r.addServerNoLock(server) {
-			changed = true
+	hashFunc := r.hashFunc(key)
+	ix := indexOf(r.hashes, hashFunc)
+	for i := 0; i < len(r.hashes) || len(S) >= n; i++ {
+		hash := r.hashes[(ix+i)%len(r.hashes)]
+		servers := r.serversByHash[hash]
+		for _, s := range servers {
+			S[s] = struct{}{}
 		}
 	}
 
-	for _, server := range remove {
-		if r.removeServerNoLock(server) {
-			changed = true
+	var servers []*Server
+	for s := range S {
+		servers = append(servers, s)
+	}
+
+	r.Unlock()
+	return servers
+}
+
+func (r *HashRing) AddRemove(add, rm []*Server) {
+	r.Lock()
+	defer r.Unlock()
+
+	for _, s := range add {
+		r.addNoSort(s)
+	}
+
+	for _, s := range rm {
+		r.remove(s)
+	}
+
+	radixSort(r.hashes, r.swap)
+}
+
+func (r *HashRing) addNoSort(s *Server) {
+	r.servers = append(r.servers, s)
+
+	hs := hashes(s, int(Config.ReplicaPoints), r.hashFunc)
+	r.hashes = append(r.hashes, hs...)
+	r.swap = append(r.swap, hs...)
+
+	for _, h := range hs {
+		r.serversByHash[h] = append(r.serversByHash[h], s)
+	}
+}
+
+func (r *HashRing) remove(s *Server) {
+	r.servers = removeServer(r.servers, s)
+
+	hs := hashes(s, int(Config.ReplicaPoints), r.hashFunc)
+	r.hashes = remove(r.hashes, hs)
+	r.swap = r.swap[:len(r.hashes)]
+
+	for _, h := range hs {
+		r.serversByHash[h] = removeServer(r.serversByHash[h], s)
+	}
+}
+
+func (r *HashRing) Checksum() (c uint64) {
+	r.Lock()
+	defer r.Unlock()
+
+	for _, h := range r.hashes {
+		c ^= h
+	}
+	return
+}
+
+func hashes(s *Server, n int, hash func(string) uint64) []uint64 {
+	var r []uint64
+	for i := 0; i < n; i++ {
+		h := hash(fmt.Sprintf("%s:%d", s.hostport, i))
+		r = append(r, h)
+	}
+	return r
+}
+
+func removeServer(slice []*Server, s *Server) []*Server {
+	for i := 0; i < len(slice); i++ {
+		if slice[i] == s {
+			slice[i] = slice[len(slice)-1]
+			slice = slice[:len(slice)-1]
+			i--
 		}
 	}
-
-	if changed {
-		r.computeChecksumNoLock()
-		r.emit(events.RingChangedEvent{
-			ServersAdded:   add,
-			ServersRemoved: remove,
-		})
-	}
-	return changed
-}
-
-// HasServer returns whether the HashRing contains the given server.
-func (r *HashRing) HasServer(server string) bool {
-	r.RLock()
-	_, ok := r.serverSet[server]
-	r.RUnlock()
-	return ok
-}
-
-// Servers returns all servers contained in the HashRing.
-func (r *HashRing) Servers() []string {
-	r.RLock()
-	servers := r.copyServersNoLock()
-	r.RUnlock()
-	return servers
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) copyServersNoLock() []string {
-	var servers []string
-	for server := range r.serverSet {
-		servers = append(servers, server)
-	}
-	return servers
-}
-
-// ServerCount returns the number of servers contained in the HashRing.
-func (r *HashRing) ServerCount() int {
-	r.RLock()
-	count := len(r.serverSet)
-	r.RUnlock()
-	return count
-}
-
-// Lookup returns the owner of the given key and whether the HashRing contains
-// the key at all.
-func (r *HashRing) Lookup(key string) (string, bool) {
-	strs := r.LookupN(key, 1)
-	if len(strs) == 0 {
-		return "", false
-	}
-	return strs[0], true
-}
-
-// LookupN returns the N servers that own the given key. Duplicates in the form
-// of virtual nodes are skipped to maintain a list of unique servers. If there
-// are less servers than N, we simply return all existing servers.
-func (r *HashRing) LookupN(key string, n int) []string {
-	r.RLock()
-	servers := r.lookupNNoLock(key, n)
-	r.RUnlock()
-	return servers
-}
-
-// This function isn't thread-safe, only call it when the HashRing is locked.
-func (r *HashRing) lookupNNoLock(key string, n int) []string {
-	if n >= len(r.serverSet) {
-		return r.copyServersNoLock()
-	}
-
-	hash := r.hashfunc(key)
-	unique := make(map[string]struct{})
-
-	// lookup N unique servers from the red-black tree. If we have not
-	// collected all the servers we want, we have reached the
-	// end of the red-black tree and we need to loop around and inspect the
-	// tree starting at 0.
-	r.tree.LookupNUniqueAt(n, hash, unique)
-	if len(unique) < n {
-		r.tree.LookupNUniqueAt(n, 0, unique)
-	}
-
-	var servers []string
-	for server := range unique {
-		servers = append(servers, server)
-	}
-	return servers
+	return slice
 }
