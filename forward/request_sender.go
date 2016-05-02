@@ -27,6 +27,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/CorgiMan/ringpop-go/hashring"
 	"github.com/CorgiMan/ringpop-go/logging"
 	"github.com/CorgiMan/ringpop-go/shared"
 	log "github.com/uber-common/bark"
@@ -46,7 +47,7 @@ type requestSender struct {
 	channel shared.SubChannel
 
 	request           []byte
-	destination       string
+	destination       *hashring.Server
 	service, endpoint string
 	keys              []string
 	format            tchannel.Format
@@ -65,7 +66,7 @@ type requestSender struct {
 
 // NewRequestSender returns a new request sender that can be used to forward a request to its destination
 func newRequestSender(sender Sender, emitter eventEmitter, channel shared.SubChannel, request []byte, keys []string,
-	destination, service, endpoint string, format tchannel.Format, opts *Options) *requestSender {
+	destination *hashring.Server, service, endpoint string, format tchannel.Format, opts *Options) *requestSender {
 
 	logger := logging.Logger("sender")
 	if identity, err := sender.WhoAmI(); err != nil {
@@ -147,7 +148,7 @@ func (s *requestSender) MakeCall(ctx context.Context, res *[]byte, fwdError *err
 	go func() {
 		defer close(done)
 
-		peer := s.channel.Peers().GetOrAdd(s.destination)
+		peer := s.channel.Peers().GetOrAdd(s.destination.HostPort)
 
 		call, err := peer.BeginCall(ctx, s.service, s.endpoint, &tchannel.CallOptions{
 			Format: s.format,
@@ -226,7 +227,7 @@ func (s *requestSender) AttemptRetry() ([]byte, error) {
 	if s.rerouteRetries {
 		newDest := dests[0]
 		// nothing rebalanced so send again
-		if newDest != s.destination {
+		if newDest.HostPort != s.destination.HostPort {
 			return s.RerouteRetry(newDest)
 		}
 	}
@@ -235,10 +236,10 @@ func (s *requestSender) AttemptRetry() ([]byte, error) {
 	return s.Send()
 }
 
-func (s *requestSender) RerouteRetry(destination string) ([]byte, error) {
+func (s *requestSender) RerouteRetry(destination *hashring.Server) ([]byte, error) {
 	s.emitter.emit(RerouteEvent{
-		s.destination,
-		destination,
+		s.destination.HostPort,
+		destination.HostPort,
 	})
 
 	s.destination = destination // update request destination
@@ -249,9 +250,9 @@ func (s *requestSender) RerouteRetry(destination string) ([]byte, error) {
 // LookupKeys looks up the destinations of the keys provided. Returns a slice
 // of destinations. If multiple keys hash to the same destination, they will
 // be deduped.
-func (s *requestSender) LookupKeys(keys []string) []string {
+func (s *requestSender) LookupKeys(keys []string) []*hashring.Server {
 	// Lookup and dedupe the destinations of the keys.
-	destSet := make(map[string]struct{})
+	destSet := make(map[*hashring.Server]struct{})
 	for _, key := range keys {
 		dest, err := s.sender.Lookup(key)
 		if err != nil {
@@ -263,7 +264,7 @@ func (s *requestSender) LookupKeys(keys []string) []string {
 	}
 
 	// Return the unique destinations as a slice.
-	dests := make([]string, 0, len(destSet))
+	dests := make([]*hashring.Server, 0, len(destSet))
 	for dest := range destSet {
 		dests = append(dests, dest)
 	}

@@ -27,6 +27,7 @@ import (
 	"sync"
 
 	"github.com/CorgiMan/ringpop-go/forward"
+	"github.com/CorgiMan/ringpop-go/hashring"
 	"github.com/CorgiMan/ringpop-go/logging"
 	"github.com/CorgiMan/ringpop-go/shared"
 	"github.com/CorgiMan/ringpop-go/util"
@@ -59,13 +60,13 @@ const (
 // A Sender is used to lookup the destinations for requests given a key.
 type Sender interface {
 	// Lookup should return a server address
-	Lookup(string) (string, error)
+	Lookup(string) (*hashring.Server, error)
 
 	// LookupN should return n server addresses
-	LookupN(string, int) ([]string, error)
+	LookupN(string, int) ([]*hashring.Server, error)
 
 	// WhoAmI should return the local address of the sender
-	WhoAmI() (string, error)
+	WhoAmI() (*hashring.Server, error)
 }
 
 // A Response is a response from a replicator read/write request.
@@ -83,9 +84,9 @@ type Options struct {
 
 type callOptions struct {
 	Keys       []string
-	Dests      []string
+	Dests      []*hashring.Server
 	Request    []byte
-	KeysByDest map[string][]string
+	KeysByDest map[*hashring.Server][]string
 	Operation  string
 	Format     tchannel.Format
 }
@@ -167,11 +168,11 @@ func (r *Replicator) Write(keys []string, request []byte, operation string, fopt
 	return r.readWrite(write, keys, request, operation, fopts, opts)
 }
 
-func (r *Replicator) groupReplicas(keys []string, n int) (map[string][]string,
-	map[string][]string) {
+func (r *Replicator) groupReplicas(keys []string, n int) (map[string][]*hashring.Server,
+	map[*hashring.Server][]string) {
 
-	destsByKey := make(map[string][]string)
-	keysByDest := make(map[string][]string)
+	destsByKey := make(map[string][]*hashring.Server)
+	keysByDest := make(map[*hashring.Server][]string)
 
 	for _, key := range keys {
 		dests, _ := r.sender.LookupN(key, n)
@@ -206,7 +207,7 @@ func (r *Replicator) readWrite(rw int, keys []string, request []byte, operation 
 	}
 
 	destsByKey, keysByDest := r.groupReplicas(keys, opts.NValue)
-	var dests []string
+	var dests []*hashring.Server
 	switch len(keys) {
 	case 1:
 		// preserve preference list order
@@ -269,7 +270,7 @@ func (r *Replicator) parallel(rwValue int, copts *callOptions, fopts *forward.Op
 
 	for _, dest := range copts.Dests {
 		wg.Add(1)
-		go func(dest string) {
+		go func(dest *hashring.Server) {
 			res, err := r.forwardRequest(dest, copts, fopts)
 
 			if err != nil {
@@ -299,7 +300,7 @@ func (r *Replicator) serial(rwValue int, copts *callOptions,
 	var errors []error
 
 	if opts.FanoutMode == SerialBalanced {
-		copts.Dests = util.ShuffleStrings(copts.Dests)
+		util.ShuffleServers(copts.Dests)
 	}
 
 	for _, dest := range copts.Dests {
@@ -314,7 +315,7 @@ func (r *Replicator) serial(rwValue int, copts *callOptions,
 	return responses, errors
 }
 
-func (r *Replicator) forwardRequest(dest string, copts *callOptions, fopts *forward.Options) (Response, error) {
+func (r *Replicator) forwardRequest(dest *hashring.Server, copts *callOptions, fopts *forward.Options) (Response, error) {
 	var response Response
 	var keys = copts.KeysByDest[dest]
 
@@ -329,7 +330,7 @@ func (r *Replicator) forwardRequest(dest string, copts *callOptions, fopts *forw
 		return response, err
 	}
 
-	response.Destination = dest
+	response.Destination = dest.HostPort
 	response.Keys = keys
 	response.Body = res
 

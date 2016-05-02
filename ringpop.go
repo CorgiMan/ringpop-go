@@ -48,25 +48,24 @@ import (
 type Interface interface {
 	Destroy()
 	App() string
-	WhoAmI() (string, error)
+	WhoAmI() (*hashring.Server, error)
 	Uptime() (time.Duration, error)
 	RegisterListener(l events.EventListener)
 	Bootstrap(opts *swim.BootstrapOptions) ([]string, error)
-	Checksum() (uint32, error)
-	Lookup(key string) (string, error)
-	LookupN(key string, n int) ([]string, error)
+	Checksum() (uint64, error)
+	Lookup(key string) (*hashring.Server, error)
+	LookupN(key string, n int) ([]*hashring.Server, error)
 	GetReachableMembers() ([]string, error)
 	CountReachableMembers() (int, error)
 
 	HandleOrForward(key string, request []byte, response *[]byte, service, endpoint string, format tchannel.Format, opts *forward.Options) (bool, error)
-	Forward(dest string, keys []string, request []byte, service, endpoint string, format tchannel.Format, opts *forward.Options) ([]byte, error)
+	Forward(dest *hashring.Server, keys []string, request []byte, service, endpoint string, format tchannel.Format, opts *forward.Options) ([]byte, error)
 }
 
 // Ringpop is a consistent hashring that uses a gossip protocol to disseminate
 // changes around the ring.
 type Ringpop struct {
-	config         *configuration
-	configHashRing *hashring.Configuration
+	config *configuration
 
 	identityResolver IdentityResolver
 
@@ -169,8 +168,8 @@ func (rp *Ringpop) init() error {
 	})
 	rp.node.RegisterListener(rp)
 
-	rp.ring = hashring.New(farm.Fingerprint32, rp.configHashRing.ReplicaPoints)
-	rp.ring.RegisterListener(rp)
+	rp.ring = hashring.New(farm.Fingerprint64)
+	// rp.ring.RegisterListener(rp)
 
 	rp.stats.hostport = genStatsHostport(address)
 	rp.stats.prefix = fmt.Sprintf("ringpop.%s", rp.stats.hostport)
@@ -278,11 +277,15 @@ func (rp *Ringpop) App() string {
 
 // WhoAmI returns the address of the current/local Ringpop node. It returns an
 // error if Ringpop is not yet initialized/bootstrapped.
-func (rp *Ringpop) WhoAmI() (string, error) {
+func (rp *Ringpop) WhoAmI() (*hashring.Server, error) {
 	if !rp.Ready() {
-		return "", ErrNotBootstrapped
+		return nil, ErrNotBootstrapped
 	}
-	return rp.identity()
+	str, err := rp.identity()
+	if err != nil {
+		return nil, err
+	}
+	return rp.ring.Lookup(str + ":0"), nil
 }
 
 // Uptime returns the amount of time that this Ringpop instance has been
@@ -539,7 +542,7 @@ func (rp *Ringpop) HandleEvent(event events.Event) {
 
 	case forward.RerouteEvent:
 		me, _ := rp.WhoAmI()
-		if event.NewDestination == me {
+		if event.NewDestination == me.HostPort {
 			rp.statter.IncCounter(rp.getStatKey("requestProxy.retry.reroute.local"), nil, 1)
 		} else {
 			rp.statter.IncCounter(rp.getStatKey("requestProxy.retry.reroute.remote"), nil, 1)
@@ -551,18 +554,18 @@ func (rp *Ringpop) HandleEvent(event events.Event) {
 }
 
 func (rp *Ringpop) handleChanges(changes []swim.Change) {
-	var serversToAdd, serversToRemove []string
+	var serversToAdd, serversToRemove []*hashring.Server
 
 	for _, change := range changes {
 		switch change.Status {
 		case swim.Alive, swim.Suspect:
-			serversToAdd = append(serversToAdd, change.Address)
+			serversToAdd = append(serversToAdd, hashring.NewServer(change.Address))
 		case swim.Faulty, swim.Leave, swim.Tombstone:
-			serversToRemove = append(serversToRemove, change.Address)
+			serversToRemove = append(serversToRemove, hashring.NewServer(change.Address))
 		}
 	}
 
-	rp.ring.AddRemoveServers(serversToAdd, serversToRemove)
+	rp.ring.AddRemove(serversToAdd, serversToRemove)
 }
 
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -572,7 +575,7 @@ func (rp *Ringpop) handleChanges(changes []swim.Change) {
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 // Checksum returns the current checksum of this Ringpop instance's hashring.
-func (rp *Ringpop) Checksum() (uint32, error) {
+func (rp *Ringpop) Checksum() (uint64, error) {
 	if !rp.Ready() {
 		return 0, ErrNotBootstrapped
 	}
@@ -582,24 +585,24 @@ func (rp *Ringpop) Checksum() (uint32, error) {
 // Lookup returns the address of the server in the ring that is responsible
 // for the specified key. It returns an error if the Ringpop instance is not
 // yet initialized/bootstrapped.
-func (rp *Ringpop) Lookup(key string) (string, error) {
+func (rp *Ringpop) Lookup(key string) (*hashring.Server, error) {
 	if !rp.Ready() {
-		return "", ErrNotBootstrapped
+		return nil, ErrNotBootstrapped
 	}
 
 	startTime := time.Now()
 
-	dest, success := rp.ring.Lookup(key)
+	dest := rp.ring.Lookup(key)
 
 	rp.emit(events.LookupEvent{
 		Key:      key,
-		Duration: time.Now().Sub(startTime),
+		Duration: time.Since(startTime),
 	})
 
-	if !success {
+	if dest == nil {
 		err := errors.New("could not find destination for key")
 		rp.logger.WithField("key", key).Warn(err)
-		return "", err
+		return nil, err
 	}
 
 	return dest, nil
@@ -608,7 +611,7 @@ func (rp *Ringpop) Lookup(key string) (string, error) {
 // LookupN returns the addresses of all the servers in the ring that are
 // responsible for the specified key. It returns an error if the Ringpop
 // instance is not yet initialized/bootstrapped.
-func (rp *Ringpop) LookupN(key string, n int) ([]string, error) {
+func (rp *Ringpop) LookupN(key string, n int) ([]*hashring.Server, error) {
 	if !rp.Ready() {
 		return nil, ErrNotBootstrapped
 	}
@@ -693,7 +696,7 @@ func (rp *Ringpop) HandleOrForward(key string, request []byte, response *[]byte,
 }
 
 // Forward forwards the request to given destination host and returns the response.
-func (rp *Ringpop) Forward(dest string, keys []string, request []byte, service, endpoint string,
+func (rp *Ringpop) Forward(dest *hashring.Server, keys []string, request []byte, service, endpoint string,
 	format tchannel.Format, opts *forward.Options) ([]byte, error) {
 
 	return rp.forwarder.ForwardRequest(request, dest, service, endpoint, keys, format, opts)

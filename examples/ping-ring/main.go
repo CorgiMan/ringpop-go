@@ -80,7 +80,7 @@ func (w *worker) PingHandler(ctx json.Context, ping *Ping) (*Pong, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Pong{"Hello, world!", identity}, nil
+		return &Pong{"Hello, world!", identity.HostPort}, nil
 	}
 
 	if err := json2.Unmarshal(res, &pong); err != nil {

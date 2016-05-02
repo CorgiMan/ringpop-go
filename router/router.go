@@ -92,7 +92,7 @@ func (r *router) GetClient(key string) (interface{}, error) {
 	}
 
 	r.rw.RLock()
-	client, ok := r.clientCache[dest]
+	client, ok := r.clientCache[dest.HostPort]
 	r.rw.RUnlock()
 	if ok {
 		return client, nil
@@ -103,7 +103,7 @@ func (r *router) GetClient(key string) (interface{}, error) {
 	defer r.rw.Unlock()
 
 	// double check it is not created between read and complete lock
-	client, ok = r.clientCache[dest]
+	client, ok = r.clientCache[dest.HostPort]
 	if ok {
 		return client, nil
 	}
@@ -121,14 +121,14 @@ func (r *router) GetClient(key string) (interface{}, error) {
 			r.channel,
 			r.channel.ServiceName(),
 			&thrift.ClientOptions{
-				HostPort: dest,
+				HostPort: dest.HostPort,
 			},
 		)
 		client = r.factory.MakeRemoteClient(thriftClient)
 	}
 
 	// cache the client
-	r.clientCache[dest] = client
+	r.clientCache[dest.HostPort] = client
 	return client, nil
 }
 

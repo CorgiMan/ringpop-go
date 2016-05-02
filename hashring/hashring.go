@@ -32,10 +32,14 @@ import (
 	// "github.com/uber-common/bark"
 )
 
-// add, remove, addremove, checksum
-
 type Server struct {
-	hostport string
+	HostPort string
+}
+
+func NewServer(hostport string) *Server {
+	return &Server{
+		HostPort: hostport,
+	}
 }
 
 type HashRing struct {
@@ -63,15 +67,25 @@ func New(hashFunc func([]byte) uint64) *HashRing {
 	return r
 }
 
+func (r *HashRing) Servers() (servers []*Server) {
+	r.Lock()
+	defer r.Unlock()
+
+	for _, s := range r.servers {
+		servers = append(servers, s)
+	}
+	return
+}
+
 func (r *HashRing) Lookup(key string) *Server {
-	ss := r.LookupNUnique(key, 1)
+	ss := r.LookupN(key, 1)
 	if len(ss) == 0 {
 		return nil
 	}
 	return ss[0]
 }
 
-func (r *HashRing) LookupNUnique(key string, n int) []*Server {
+func (r *HashRing) LookupN(key string, n int) []*Server {
 	// don't defer Unlock for performance
 	r.Lock()
 
@@ -148,7 +162,7 @@ func (r *HashRing) Checksum() (c uint64) {
 func hashes(s *Server, n int, hash func(string) uint64) []uint64 {
 	var r []uint64
 	for i := 0; i < n; i++ {
-		h := hash(fmt.Sprintf("%s:%d", s.hostport, i))
+		h := hash(fmt.Sprintf("%s:%d", s.HostPort, i))
 		r = append(r, h)
 	}
 	return r

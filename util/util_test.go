@@ -242,7 +242,7 @@ func TestTimeZero(t *testing.T) {
 	assert.True(t, TimeZero().IsZero())
 }
 
-func TestShuffleStringsInPlace(t *testing.T) {
+func TestShuffleStrings(t *testing.T) {
 	strs := make([]string, 1000)
 	strs2 := make([]string, 1000)
 	for i := range strs {
@@ -250,7 +250,7 @@ func TestShuffleStringsInPlace(t *testing.T) {
 		strs2[i] = strs[i]
 	}
 
-	ShuffleStringsInPlace(strs)
+	ShuffleStrings(strs)
 
 	collisions := 0
 	for i := range strs {

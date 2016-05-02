@@ -131,7 +131,7 @@ func (h *discoverProviderHealer) Heal() ([]string, error) {
 	}
 
 	h.previousHostListSize = len(hostList)
-	util.ShuffleStringsInPlace(hostList)
+	util.ShuffleStrings(hostList)
 
 	// collect the targets this node might want to heal with
 	var targets []string

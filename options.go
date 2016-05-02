@@ -24,7 +24,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/CorgiMan/ringpop-go/hashring"
 	"github.com/CorgiMan/ringpop-go/logging"
 	"github.com/CorgiMan/ringpop-go/shared"
 	"github.com/CorgiMan/ringpop-go/swim"
@@ -113,27 +112,6 @@ func Clock(c clock.Clock) Option {
 func Channel(ch shared.TChannel) Option {
 	return func(r *Ringpop) error {
 		r.channel = ch
-		return nil
-	}
-}
-
-// HashRingConfig takes a `HashRingConfiguration` struct that can be used to
-// configure the hash ring.
-//
-// Example:
-//
-//     rp, err := ringpop.New("my-app",
-//         ringpop.Channel(myChannel),
-//         ringpop.HashRingConfig(&HashRingConfiguration{
-//             ReplicaPoints: 100,
-//         }),
-//     )
-//
-// See documentation on the `HashRingConfiguration` struct for more information
-// about what options are available.
-func HashRingConfig(c *hashring.Configuration) Option {
-	return func(r *Ringpop) error {
-		r.configHashRing = c
 		return nil
 	}
 }
@@ -310,10 +288,6 @@ func defaultStatter(r *Ringpop) error {
 	return Statter(noopStatsReporter{})(r)
 }
 
-func defaultHashRingOptions(r *Ringpop) error {
-	return HashRingConfig(defaultHashRingConfiguration)(r)
-}
-
 func defaultMembershipChecksumStatPeriod(r *Ringpop) error {
 	return MembershipChecksumStatPeriod(StatPeriodDefault)(r)
 }
@@ -331,9 +305,4 @@ var defaultOptions = []Option{
 	defaultStatter,
 	defaultMembershipChecksumStatPeriod,
 	defaultRingChecksumStatPeriod,
-	defaultHashRingOptions,
-}
-
-var defaultHashRingConfiguration = &hashring.Configuration{
-	ReplicaPoints: 100,
 }

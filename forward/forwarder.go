@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/CorgiMan/ringpop-go/events"
+	"github.com/CorgiMan/ringpop-go/hashring"
 	"github.com/CorgiMan/ringpop-go/logging"
 	"github.com/CorgiMan/ringpop-go/shared"
 	"github.com/CorgiMan/ringpop-go/util"
@@ -38,10 +39,10 @@ import (
 // the server returned by Lookup(key)
 type Sender interface {
 	// WhoAmI should return the address of the local sender
-	WhoAmI() (string, error)
+	WhoAmI() (*hashring.Server, error)
 
 	// Lookup should return the server the request belongs to
-	Lookup(string) (string, error)
+	Lookup(string) (*hashring.Server, error)
 }
 
 // Options for the creation of a forwarder
@@ -151,7 +152,7 @@ func (f *Forwarder) decrementInflight() {
 // ForwardRequest forwards a request to the given service and endpoint returns the response.
 // Keys are used by the sender to lookup the destination on retry. If you have multiple keys
 // and their destinations diverge on a retry then the call is aborted.
-func (f *Forwarder) ForwardRequest(request []byte, destination, service, endpoint string,
+func (f *Forwarder) ForwardRequest(request []byte, destination *hashring.Server, service, endpoint string,
 	keys []string, format tchannel.Format, opts *Options) ([]byte, error) {
 
 	f.emit(RequestForwardedEvent{})

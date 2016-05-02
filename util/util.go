@@ -28,6 +28,8 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/CorgiMan/ringpop-go/hashring"
 )
 
 // HostportPattern is regex to match a host:port
@@ -171,25 +173,21 @@ func StringInSlice(slice []string, str string) bool {
 	return false
 }
 
-// ShuffleStrings takes a slice of strings and returns a new slice containing
-// the same strings in a random order.
-func ShuffleStrings(strings []string) []string {
-	newStrings := make([]string, len(strings))
-	newIndexes := rand.Perm(len(strings))
-
-	for o, n := range newIndexes {
-		newStrings[n] = strings[o]
+// ShuffleServers uses the Fisher–Yates shuffle to randomize the Servers
+// in place.
+func ShuffleServers(slice []*hashring.Server) {
+	for i := range slice {
+		j := rand.Intn(i + 1)
+		slice[i], slice[j] = slice[j], slice[i]
 	}
-
-	return newStrings
 }
 
-// ShuffleStringsInPlace uses the Fisher–Yates shuffle to randomize the strings
+// ShuffleStrings uses the Fisher–Yates shuffle to randomize the Servers
 // in place.
-func ShuffleStringsInPlace(strings []string) {
-	for i := range strings {
+func ShuffleStrings(slice []string) {
+	for i := range slice {
 		j := rand.Intn(i + 1)
-		strings[i], strings[j] = strings[j], strings[i]
+		slice[i], slice[j] = slice[j], slice[i]
 	}
 }
 
